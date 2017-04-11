@@ -37,16 +37,16 @@ from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily, REGIS
 class RouterCollector(object):
     def collect(self):
         response = self.get_metrics()
+        if response != None:
+            m = GaugeMetricFamily('num_connections', 'Number of connections to router', labels=['container', 'role', 'dir'])
+            attributes = response.body["attributeNames"]
+            for result in response.body["results"]:
+                result_map = {}
+                for i in range(0, len(attributes)):
+                    result_map[attributes[i]] = result[i]
+                m.add_metric([result_map["container"], result_map["role"], result_map["dir"]], 1.0)
 
-        m = GaugeMetricFamily('num_connections', 'Number of connections to router', labels=['container', 'role', 'dir'])
-        attributes = response.body["attributeNames"]
-        for result in response.body["results"]:
-            result_map = {}
-            for i in range(0, len(attributes)):
-                result_map[attributes[i]] = result[i]
-            m.add_metric([result_map["container"], result_map["role"], result_map["dir"]], 1.0)
-
-        yield m
+            yield m
 
     def get_metrics(self):
         client = SyncRequestResponse(BlockingConnection("127.0.0.1:5672", 30), "$management")
@@ -58,6 +58,10 @@ class RouterCollector(object):
             message = Message(body=None, properties=properties)
             response = client.call(message)
             return response
+        except:
+            e = sys.exc_info()[0]
+            print("Error querying router for metrics: %s" % e)
+            return None
         finally:
             client.connection.close()
 
