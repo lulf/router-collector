@@ -49,7 +49,7 @@ class RouterCollector(object):
         yield m
 
     def get_metrics(self):
-        client = SyncRequestResponse(BlockingConnection("localhost:5672", 10), "$management")
+        client = SyncRequestResponse(BlockingConnection("127.0.0.1:5672", 30), "$management")
         try:
             properties = {}
             properties["entityType"] = "org.apache.qpid.dispatch.connection"
